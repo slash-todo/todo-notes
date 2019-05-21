@@ -1,4 +1,11 @@
-import { existsSync, mkdirSync, mkdir } from 'fs';
+import {
+  existsSync,
+  mkdir,
+  lstatSync,
+  rmdirSync,
+  readdirSync,
+  unlinkSync
+} from 'fs';
 import download from 'download-git-repo';
 import { appState } from '../state';
 import {
@@ -7,12 +14,31 @@ import {
 } from '../state/constants';
 import { join } from 'path';
 
+const deleteDirectory = Symbol('deleteDirectory');
 const createDirectoryStructure = Symbol('createDirectoryStructure');
 const downloadByGit = Symbol('downloadByGit');
 
 export class PluginService {
+  static [deleteDirectory](dirPath) {
+    if (existsSync(dirPath)) {
+      readdirSync(dirPath).forEach(function(file) {
+        var curPath = join(dirPath, file);
+        if (lstatSync(curPath).isDirectory()) {
+          // recurse
+          PluginService[deleteDirectory](curPath);
+        } else {
+          // delete file
+          unlinkSync(curPath);
+        }
+      });
+      rmdirSync(dirPath);
+      return Promise.resolve(dirPath);
+    }
+
+    return Promise.resolve(dirPath);
+  }
+
   static [createDirectoryStructure](path) {
-    console.log('process.cwd(): ', process.cwd());
     return new Promise((resolve, reject) => {
       mkdir(path, { recursive: true }, error => {
         if (error) {
@@ -21,7 +47,7 @@ export class PluginService {
           );
         }
 
-        resolve();
+        resolve(path);
       });
     });
   }
@@ -41,25 +67,38 @@ export class PluginService {
   /**
    * Downloads resources from git or npm
    * @param {{name, version, git, npm}} plugin
+   *
+   * @returns {Promise<string>} Promise of the path to the plugins config file
    */
   static downloadPlugin(plugin) {
-    function download() {
+    function download(installPath) {
       if (plugin.git) {
-        console.log('DOWNLOAD FROM GUT');
         return PluginService[downloadByGit](plugin.git, installPath);
       }
+
+      throw new Error(
+        `No source for '${
+          plugin.name
+        }' provided! Please define 'git' or 'npm' in the apps configuration.`
+      );
     }
 
     const pluginPath = appState.plugins.path || DEFAULT_PLUGINS_PATH;
-    const installPath = `${pluginPath}/${plugin.name}/${plugin.version}`;
-    if (!existsSync(`${installPath}/${DEFAULT_CONFIG_FILENAME}`)) {
-      return PluginService[createDirectoryStructure](
-        join(process.cwd(), installPath)
-      ).then(download);
+    const installPath = join(
+      process.cwd(),
+      `${pluginPath}/${plugin.name}/${plugin.version}`
+    );
+    const configFilePath = join(installPath, DEFAULT_CONFIG_FILENAME);
+
+    if (!existsSync(configFilePath)) {
+      return PluginService[deleteDirectory](installPath)
+        .then(PluginService[createDirectoryStructure])
+        .then(download)
+        .then(() => Promise.resolve(configFilePath));
     }
 
     // TODO: check plugin version
-    return Promise.resolve();
+    return Promise.resolve(`${installPath}/${DEFAULT_CONFIG_FILENAME}`);
   }
 
   static downloadPlugins(plugins) {
