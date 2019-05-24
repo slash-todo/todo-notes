@@ -7,7 +7,7 @@ export class TodoConfig {
     this[setDefaults]();
 
     if (config) {
-      this.configPath = config.configPath;
+      this.path = config.configPath;
       this.plugins = config.plugins;
     }
   }

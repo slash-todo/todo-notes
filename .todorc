@@ -1,12 +1,8 @@
 {
   "plugins": {
     "path": "./plugins",
-    "installed": [
-      {
-        "name": "bot",
-        "version": "0.1.0",
-        "git": "https://github.com/slash-todo/todo-bot.git"
-      }
-    ]
+    "installed": {
+      "stickies": "0.1.0"
+    }
   }
 }

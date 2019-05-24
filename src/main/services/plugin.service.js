@@ -66,11 +66,36 @@ export class PluginService {
 
   /**
    * Downloads resources from git or npm
-   * @param {{name, version, git, npm}} plugin
+   * @param {{[pluginName]: version | npm | giturl}} plugin
    *
    * @returns {Promise<string>} Promise of the path to the plugins config file
    */
   static downloadPlugin(plugin) {
+    /**
+     * PluginMeta is a different representation the plugin data
+     */
+    function convertToPluginMeta(plugin) {
+      function isGit(url) {
+        return url.startsWith('http') || url.endsWith('.git');
+      }
+
+      const keys = Object.keys(plugin);
+      if (keys.length !== 1) {
+        throw new Error(
+          `Plugin definition '${plugin}' has the wrong format! Should be '{[pluginName]: version | npm | giturl}'.`
+        );
+      }
+      const pluginMeta = {};
+      const pluginName = keys[0];
+      const pluginInfo = plugin[pluginName];
+      pluginMeta.name = pluginName;
+      if (isGit(pluginInfo)) {
+        pluginMeta.git = pluginInfo;
+      }
+
+      return pluginMeta;
+    }
+
     function download(installPath) {
       if (plugin.git) {
         return PluginService[downloadByGit](plugin.git, installPath);
@@ -83,11 +108,9 @@ export class PluginService {
       );
     }
 
-    const pluginPath = appState.plugins.path || DEFAULT_PLUGINS_PATH;
-    const installPath = join(
-      process.cwd(),
-      `${pluginPath}/${plugin.name}/${plugin.version}`
-    );
+    plugin = convertToPluginMeta(plugin);
+    const pluginPath = appState.config.plugins.path || DEFAULT_PLUGINS_PATH;
+    const installPath = join(process.cwd(), `${pluginPath}/${plugin.name}`);
     const configFilePath = join(installPath, DEFAULT_CONFIG_FILENAME);
 
     if (!existsSync(configFilePath)) {
@@ -102,6 +125,10 @@ export class PluginService {
   }
 
   static downloadPlugins(plugins) {
-    return Promise.all(plugins.map(PluginService.downloadPlugin));
+    return Promise.all(
+      Object.keys(plugins)
+        .map(key => ({ [key]: plugins[key] }))
+        .map(PluginService.downloadPlugin)
+    );
   }
 }
