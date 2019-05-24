@@ -19,13 +19,13 @@ const createDirectoryStructure = Symbol('createDirectoryStructure');
 const downloadByGit = Symbol('downloadByGit');
 
 export class PluginService {
-  static [deleteDirectory](dirPath) {
+  [deleteDirectory](dirPath) {
     if (existsSync(dirPath)) {
       readdirSync(dirPath).forEach(function(file) {
         var curPath = join(dirPath, file);
         if (lstatSync(curPath).isDirectory()) {
           // recurse
-          PluginService[deleteDirectory](curPath);
+          this[deleteDirectory](curPath);
         } else {
           // delete file
           unlinkSync(curPath);
@@ -38,7 +38,7 @@ export class PluginService {
     return Promise.resolve(dirPath);
   }
 
-  static [createDirectoryStructure](path) {
+  [createDirectoryStructure](path) {
     return new Promise((resolve, reject) => {
       mkdir(path, { recursive: true }, error => {
         if (error) {
@@ -52,7 +52,7 @@ export class PluginService {
     });
   }
 
-  static [downloadByGit](repoUrl, destination) {
+  [downloadByGit](repoUrl, destination) {
     return new Promise((resolve, reject) => {
       download(`direct:${repoUrl}`, destination, { clone: true }, error => {
         if (error) {
@@ -70,7 +70,7 @@ export class PluginService {
    *
    * @returns {Promise<string>} Promise of the path to the plugins config file
    */
-  static downloadPlugin(plugin) {
+  downloadPlugin(plugin) {
     /**
      * PluginMeta is a different representation the plugin data
      */
@@ -98,7 +98,7 @@ export class PluginService {
 
     function download(installPath) {
       if (plugin.git) {
-        return PluginService[downloadByGit](plugin.git, installPath);
+        return this[downloadByGit](plugin.git, installPath);
       }
 
       throw new Error(
@@ -114,21 +114,21 @@ export class PluginService {
     const configFilePath = join(installPath, DEFAULT_CONFIG_FILENAME);
 
     if (!existsSync(configFilePath)) {
-      return PluginService[deleteDirectory](installPath)
-        .then(PluginService[createDirectoryStructure])
+      return this[deleteDirectory](installPath)
+        .then(this[createDirectoryStructure])
         .then(download)
         .then(() => Promise.resolve(configFilePath));
     }
 
     // TODO: check plugin version
-    return Promise.resolve(`${installPath}/${DEFAULT_CONFIG_FILENAME}`);
+    return Promise.resolve(join(installPath, DEFAULT_CONFIG_FILENAME));
   }
 
-  static downloadPlugins(plugins) {
+  downloadPlugins(plugins) {
     return Promise.all(
       Object.keys(plugins)
         .map(key => ({ [key]: plugins[key] }))
-        .map(PluginService.downloadPlugin)
+        .map(this.downloadPlugin)
     );
   }
 }

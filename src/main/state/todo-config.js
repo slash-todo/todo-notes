@@ -4,11 +4,11 @@ const setDefaults = Symbol('setDefaults');
 
 export class TodoConfig {
   constructor(config) {
-    this[setDefaults]();
-
     if (config) {
-      this.path = config.configPath;
+      this.configPath = config.configPath;
       this.plugins = config.plugins;
+    } else {
+      this[setDefaults]();
     }
   }
 

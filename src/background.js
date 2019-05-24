@@ -5,10 +5,11 @@ import {
   createProtocol,
   installVueDevtools
 } from 'vue-cli-plugin-electron-builder/lib';
-import * as Initializer from './main/initializer';
+import { Initializer } from './main/initializer';
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
-Initializer.init();
+const initializer = new Initializer();
+initializer.init();
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.

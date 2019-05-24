@@ -1,8 +1,5 @@
-import { TodoConfig } from './todo-config';
+import { AppState } from './app-state';
 
 export * from './todo-config';
 
-export const appState = {
-  config: new TodoConfig(),
-  plugins: {}
-};
+export const appState = new AppState();

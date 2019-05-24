@@ -1,22 +1,139 @@
 import { appState } from './state';
-import { ConfigService } from './services/config.service';
+import { PluginService } from './services';
+import { ConfigUtils } from './utils';
 import { TodoConfig } from './state';
-import { PluginService } from './services/plugin.service';
+import { TodoPlugin } from './models';
+import { lstatSync, readdirSync } from 'fs';
+import { join, resolve } from 'path';
+import { DEFAULT_CONFIG_FILENAME } from './state/constants';
 
-export function init() {
-  function loadAndInitConfig() {
+const loadAndInitConfig = Symbol('loadAndInitConfig');
+const installCorePlugins = Symbol('installCorePlugins');
+const initUserPlugins = Symbol('initUserPlugins');
+
+export class Initializer {
+  constructor() {
+    this.appState = appState;
+
+    this.pluginService = new PluginService();
+
+    this.init = this.init.bind(this);
+    this[installCorePlugins] = this[installCorePlugins].bind(this);
+    this[initUserPlugins] = this[initUserPlugins].bind(this);
+  }
+
+  [loadAndInitConfig]() {
     console.log('Load and init config...');
-    const config = ConfigService.loadConfig(appState.config.configPath);
-    appState.config = new TodoConfig(config);
+    return ConfigUtils.loadConfig(appState.config.configPath).then(config => {
+      appState.config = new TodoConfig(config);
+      return config;
+    });
   }
 
-  function initPlugins() {
-    console.log('Init plugins');
-    PluginService.downloadPlugins(appState.config.plugins.installed)
-      .then(b => console.log('Plugins downloaded: ', b))
-      .catch(error => console.error('Error downloading plugins: ', error));
+  [installCorePlugins](config) {
+    console.log('Install core plugins...');
+    function getPluginDirectoryList(pluginPath) {
+      function isDirectory(source) {
+        return lstatSync(source).isDirectory();
+      }
+
+      function getDirectories(source) {
+        return readdirSync(source)
+          .map(name => join(source, name))
+          .filter(isDirectory);
+      }
+
+      console.log('pluginPath: ', pluginPath);
+      return new Promise((resolve, reject) => {
+        try {
+          resolve(getDirectories(pluginPath));
+        } catch (error) {
+          reject(`Error loading plugin directory list! Error: '${error}'.`);
+        }
+      });
+    }
+
+    function toConfigPath(pluginPath) {
+      return join(pluginPath, DEFAULT_CONFIG_FILENAME);
+    }
+
+    function loadPluginsConfig(configPaths) {
+      return Promise.all(configPaths.map(ConfigUtils.loadConfig));
+    }
+
+    function toPlugins(configs) {
+      return Promise.resolve(configs.map(c => new TodoPlugin(config)));
+    }
+
+    /**
+     * Returns the Plugins API
+     * @param {*} plugins
+     */
+    function installPlugins(plugins) {
+      console.log('isntall');
+      return Promise.all(
+        plugins.map(p =>
+          p.install().then(api => Promise.resolve({ ...p, api }))
+        )
+      );
+    }
+
+    // TODO: need names
+    function addPluginApisToClient(plugins) {
+      console.log('add plugin to api: ');
+      const apis = plugins.map(p => ({ [p.name]: p.api }));
+      this.appState.client.addPlugins(apis);
+      return Promise.resolve(plugins);
+    }
+
+    function addViewRoutes(plugins) {
+      return Promise.resolve(plugins);
+    }
+    console.log('CONFIG: ', config);
+    return getPluginDirectoryList(resolve(join(config.plugins.path, 'core')))
+      .then(list => Promise.resolve(list.map(toConfigPath)))
+      .then(loadPluginsConfig)
+      .then(toPlugins)
+      .then(installPlugins)
+      .then(addPluginApisToClient.bind(this))
+      .then(addViewRoutes)
+      .then(_ => Promise.resolve(config));
   }
 
-  loadAndInitConfig();
-  initPlugins();
+  [initUserPlugins](config) {
+    console.log('Init user plugins...');
+    function downloadPlugins(plugins) {
+      return this.pluginService.downloadPlugins(plugins);
+    }
+
+    function loadPluginsConfig(configPaths) {
+      return Promise.all(configPaths.map(ConfigUtils.loadConfig));
+    }
+
+    function toPlugins(configs) {
+      return Promise.resolve(configs.map(c => new TodoPlugin(c)));
+    }
+
+    return downloadPlugins
+      .call(this, config.plugins.installed)
+      .then(loadPluginsConfig)
+      .then(toPlugins);
+  }
+
+  init() {
+    function updateAppState() {
+      appState.update(this.appState);
+    }
+
+    this[loadAndInitConfig]()
+      .then(this[installCorePlugins])
+      .then(this[initUserPlugins])
+      .then(configs => {
+        console.log('Configs: ', configs);
+        updateAppState.call(this);
+      })
+      .catch(error => {
+        console.error('Error initiating application: Error: ', error);
+      });
+  }
 }
