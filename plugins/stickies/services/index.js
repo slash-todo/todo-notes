@@ -1,1 +1,1 @@
-export * from './StickiesService';
+export * from './stickies.service';
