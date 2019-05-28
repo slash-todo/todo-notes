@@ -3,6 +3,9 @@
     "path": "./plugins",
     "installed": {
       "stickies": "0.1.0"
+    },
+    "settings": {
+      "stickies": {}
     }
   }
 }

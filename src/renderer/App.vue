@@ -20,7 +20,7 @@ export default {
 };
 </script>
 
-<style>
+<style lang="scss">
 html,
 body {
   display: flex;
@@ -31,9 +31,18 @@ body {
   overflow: hidden;
 }
 
-aside,
+h3,
+h5 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
 main {
   padding: 1rem;
+
+  h3 {
+    color: black;
+  }
 }
 
 aside {
@@ -49,7 +58,6 @@ main {
   font-family: 'Avenir', Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: #2c3e50;
 
   display: flex;
   flex: 1;
