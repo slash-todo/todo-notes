@@ -1,4 +1,4 @@
-export class LocalStorageService {
+module.exports = class LocalStorageService {
   setItem(key, value) {
     localStorage.setItem(key, JSON.stringify(value));
   }
@@ -6,4 +6,4 @@ export class LocalStorageService {
   getItem(key) {
     return JSON.parse(localStorage.getItem(key));
   }
-}
+};

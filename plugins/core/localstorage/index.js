@@ -1,5 +1,5 @@
-import { LocalStorageService } from './LocalStorageService';
+const LocalStorageService = require('./LocalStorageService');
 
-export default function install() {
+module.exports = function install() {
   return Promise.resolve(new LocalStorageService());
-}
+};
