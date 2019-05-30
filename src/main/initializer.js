@@ -1,6 +1,6 @@
 import { appState } from './state';
 import { PluginService } from './services';
-import { ConfigUtils } from './utils';
+import { ConfigUtils, map } from './utils';
 import { TodoConfig } from './state';
 import { TodoPlugin } from './models';
 import { lstatSync, readdirSync } from 'fs';
@@ -53,16 +53,22 @@ export class Initializer {
       });
     }
 
-    function toConfigPath(pluginPath) {
-      return join(pluginPath, DEFAULT_CONFIG_FILENAME);
+    function toConfigPath(path) {
+      function appendConfigFilename(pluginPath) {
+        return join(pluginPath, DEFAULT_CONFIG_FILENAME);
+      }
+
+      return appendConfigFilename(path);
+      //return paths.map(appendConfigFilename);
     }
 
     function loadPluginsConfig(configPaths) {
       return Promise.all(configPaths.map(ConfigUtils.loadConfig));
     }
 
-    function toPlugins(configs) {
-      return Promise.resolve(configs.map(c => new TodoPlugin(config)));
+    function toPlugin(config) {
+      return new TodoPlugin(config);
+      //return configs.map(c => new TodoPlugin(config));
     }
 
     /**
@@ -91,9 +97,9 @@ export class Initializer {
     }
     console.log('CONFIG: ', config);
     return getPluginDirectoryList(resolve(join(config.plugins.path, 'core')))
-      .then(list => Promise.resolve(list.map(toConfigPath)))
+      .then(map(toConfigPath))
       .then(loadPluginsConfig)
-      .then(toPlugins)
+      .then(map(toPlugin))
       .then(installPlugins)
       .then(addPluginApisToClient.bind(this))
       .then(addViewRoutes)
