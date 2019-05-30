@@ -1,0 +1,4 @@
+{
+  "name": "localstorage",
+  "install": "./index.js"
+}
