@@ -27,8 +27,10 @@ export class TodoPlugin {
       return Promise.resolve({});
     }
 
-    const installer = require(join(this.root, this.installer));
+    const installer = eval('require')(
+      /* webpackIgnore: true */ join(this.root, this.installer)
+    );
 
-    return installer(appState.client).then(updateApi);
+    return installer(appState.client).then(updateApi.bind(this));
   }
 }
