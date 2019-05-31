@@ -19,7 +19,7 @@ export default {
     Sticky
   },
   mounted() {
-    this.notes = StickiesService.loadStickies();
+    this.notes = StickiesService.getInstance().loadStickies();
   }
 };
 </script>
