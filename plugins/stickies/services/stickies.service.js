@@ -1,27 +1,27 @@
 import CONSTANTS from '../constants';
 
-const INSTANCE = Symbol('INSTANCE');
-
 export class StickiesService {
-  static [INSTANCE];
+  static _INSTANCE;
 
   constructor(todoClient) {
     this.localStorageService = todoClient.plugins.localStorage;
   }
 
-  /** todoClient is options. It is required to initialize the service */
+  /** todoClient is optional. It is required to initialize the service */
   static getInstance(todoClient) {
-    if (!todoClient && !stickiesService) {
+    console.log('[INSTNACE]: ', StickiesService._INSTANCE);
+    if (!todoClient && !StickiesService._INSTANCE) {
       throw new Error(
         'To create an instance of the StickiesService you need to pass the todoClient'
       );
     }
 
     if (todoClient) {
-      StickiesService[INSTANCE] = new StickiesService(todoClient);
+      console.log('INIT SERVICE');
+      StickiesService._INSTANCE = new StickiesService(todoClient);
     }
 
-    return StickiesService[INSTANCE];
+    return StickiesService._INSTANCE;
   }
 
   loadStickies() {
@@ -37,5 +37,3 @@ export class StickiesService {
     this.localStorageService.setItem(CONSTANTS.LOCALSTORAGE_KEY, stickies);
   }
 }
-
-let stickiesService;

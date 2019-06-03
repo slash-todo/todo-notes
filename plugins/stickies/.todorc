@@ -1,5 +1,5 @@
 {
   "name": "stickies",
-  "index": "./StickyBoard.vue",
-  "install": "index.js"
+  "component": "StickyBoard",
+  "index": "./dist/stickies.umd.js"
 }

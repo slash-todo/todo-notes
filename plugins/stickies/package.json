@@ -1,0 +1,11 @@
+{
+  "name": "stickies",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "vue build --target lib --name stickies index.js"
+  },
+  "author": "KenavR",
+  "license": "MIT"
+}
