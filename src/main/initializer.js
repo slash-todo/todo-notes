@@ -1,3 +1,5 @@
+import { ipcMain } from 'electron';
+
 import { appState } from './state';
 import { PluginService } from './services';
 import { ConfigUtils, map } from './utils';
@@ -12,7 +14,8 @@ const installCorePlugins = Symbol('installCorePlugins');
 const initUserPlugins = Symbol('initUserPlugins');
 
 export class Initializer {
-  constructor() {
+  constructor(window) {
+    this.window = window;
     this.appState = appState;
 
     this.pluginService = new PluginService();
@@ -86,23 +89,33 @@ export class Initializer {
 
     // TODO: need names
     function addPluginApisToClient(plugins) {
-      console.log('add plugin to api: ');
       const apis = plugins.map(p => ({ [p.name]: p.api }));
       this.appState.client.addPlugins(apis);
       return Promise.resolve(plugins);
     }
 
-    function addViewRoutes(plugins) {
+    function updateViewRoutes(plugins) {
+      const routes = plugins
+        .filter(p => !!p.component)
+        .map(p => ({
+          path: `/${p.name}`,
+          component: eval('require')(p.component)
+        }));
+
+      this.window.webContents.on('did-finish-load', () => {
+        this.window.webContents.send('set-routes', routes);
+      });
+
       return Promise.resolve(plugins);
     }
-    console.log('CONFIG: ', config);
+
     return getPluginDirectoryList(resolve(join(config.plugins.path, 'core')))
       .then(map(toConfigPath))
       .then(loadPluginsConfig)
       .then(map(toPlugin))
       .then(installPlugins)
       .then(addPluginApisToClient.bind(this))
-      .then(addViewRoutes)
+      .then(updateViewRoutes.bind(this))
       .then(_ => Promise.resolve(config));
   }
 
@@ -120,10 +133,61 @@ export class Initializer {
       return Promise.resolve(configs.map(c => new TodoPlugin(c)));
     }
 
+    /**
+     * Returns the Plugins API
+     * @param {*} plugins
+     */
+    function installPlugins(plugins) {
+      console.log('isntall', plugins);
+      return Promise.all(
+        plugins.map(p =>
+          p.install().then(api =>
+            Promise.resolve({
+              ...p,
+              api
+            })
+          )
+        )
+      );
+    }
+
+    // TODO: need names
+    function addPluginApisToClient(plugins) {
+      console.log('add plugin to api: ');
+      const apis = plugins.map(p => ({
+        [p.name]: p.api
+      }));
+      this.appState.client.addPlugins(apis);
+      return Promise.resolve(plugins);
+    }
+
+    function updateViewRoutes(plugins) {
+      console.log('UPDATE VIEW ROUTES: ', plugins);
+      const routes = plugins
+        .filter(p => !!p.component)
+        .map(p => ({
+          path: `/plugins/${p.name}`,
+          component: p.getMainComponent()
+        }));
+
+      /* global is shared with the renderer processes */
+      global.routes = routes;
+
+      return Promise.resolve(plugins);
+    }
+
     return downloadPlugins
       .call(this, config.plugins.installed)
       .then(loadPluginsConfig)
-      .then(toPlugins);
+      .then(toPlugins)
+      .then(plugins => {
+        return Promise.all([
+          installPlugins(plugins)
+            .then(addPluginApisToClient.bind(this))
+            .then(updateViewRoutes.bind(this, plugins))
+        ]);
+      })
+      .then(_ => Promise.resolve(config));
   }
 
   init() {

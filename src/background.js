@@ -8,8 +8,6 @@ import {
 import { Initializer } from './main/initializer';
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
-const initializer = new Initializer();
-initializer.init();
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -45,6 +43,11 @@ function createWindow() {
   });
 }
 
+function initializeMain(window) {
+  const initializer = new Initializer(window);
+  initializer.init();
+}
+
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
   // On macOS it is common for applications and their menu bar
@@ -59,6 +62,7 @@ app.on('activate', () => {
   // dock icon is clicked and there are no other windows open.
   if (win === null) {
     createWindow();
+    initializeMain(win);
   }
 });
 
@@ -75,6 +79,7 @@ app.on('ready', async () => {
     }
   }
   createWindow();
+  initializeMain(win);
 });
 
 // Exit cleanly on request from parent process in development mode.

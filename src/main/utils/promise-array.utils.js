@@ -11,3 +11,5 @@ export function map(mapper) {
 export function reduce(reducer, initialValue) {
   return array => Promise.resolve(array.reduce(reducer, initialValue));
 }
+
+export function filter() {}

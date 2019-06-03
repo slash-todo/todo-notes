@@ -5,14 +5,34 @@ export class TodoPlugin {
   constructor(pluginConfig) {
     this.name = pluginConfig.name;
     this.index = pluginConfig.index;
-    this.installer = pluginConfig.install;
+    this.component = pluginConfig.component;
 
     this.root = pluginConfig.root || '';
     this.api = null;
   }
 
-  get component() {
-    return null;
+  getMainComponent() {
+    console.log('INDEX: ', this.index);
+    if (!this.index) {
+      return null;
+    }
+    console.log(
+      'COMPONENT PATH: ',
+      join(this.root, this.index),
+      this.component
+    );
+    /*return () => {
+      const comp = import(join(this.root, this.index))[this.component];
+      console.log('THIS IS THE LOADED COMP: ', comp);
+      return comp;
+    }; return eval(
+      'require'
+    )(join(this.root, this.index))[this.component];*/
+
+    return {
+      path: join(this.root, this.index),
+      name: this.component
+    };
   }
 
   install() {
@@ -21,15 +41,17 @@ export class TodoPlugin {
       return Promise.resolve(api);
     }
 
-    if (!this.installer || this.installer.length <= 0) {
+    if (!this.index || this.index.length <= 0) {
       // TODO: return null when there is no installer/api so the client can ignore it
 
       return Promise.resolve({});
     }
+    // TODO: Add error handling
+    console.log('PATH: ------------------ ', join(this.root, this.index));
 
     const installer = eval('require')(
-      /* webpackIgnore: true */ join(this.root, this.installer)
-    );
+      /* webpackIgnore: true */ join(this.root, this.index)
+    ).default;
 
     return installer(appState.client).then(updateApi.bind(this));
   }
