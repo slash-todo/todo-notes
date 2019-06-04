@@ -12,15 +12,15 @@ export class TodoPlugin {
   }
 
   getMainComponent() {
-    console.log('INDEX: ', this.index);
+    //console.log('INDEX: ', this.index);
     if (!this.index) {
       return null;
     }
-    console.log(
+    /*console.log(
       'COMPONENT PATH: ',
       join(this.root, this.index),
       this.component
-    );
+    );*/
     /*return () => {
       const comp = import(join(this.root, this.index))[this.component];
       console.log('THIS IS THE LOADED COMP: ', comp);
@@ -47,7 +47,7 @@ export class TodoPlugin {
       return Promise.resolve({});
     }
     // TODO: Add error handling
-    console.log('PATH: ------------------ ', join(this.root, this.index));
+    // ('PATH: ------------------ ', join(this.root, this.index));
 
     const installer = eval('require')(
       /* webpackIgnore: true */ join(this.root, this.index)

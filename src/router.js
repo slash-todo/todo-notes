@@ -5,7 +5,12 @@ import { remote } from 'electron';
 import { SettingsContainer } from './renderer/components';
 import Landing from './renderer/Landing.vue';
 
+import { RendererInitializer } from './renderer/initializer';
+
 Vue.use(Router);
+
+const initializer = new RendererInitializer();
+initializer.init();
 
 function externalComponent(url) {
   return new Promise((resolve, reject) => {

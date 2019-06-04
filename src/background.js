@@ -5,6 +5,7 @@ import {
   createProtocol,
   installVueDevtools
 } from 'vue-cli-plugin-electron-builder/lib';
+import { OldInitializer } from './main/initializer-old';
 import { Initializer } from './main/initializer';
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
@@ -44,8 +45,11 @@ function createWindow() {
 }
 
 function initializeMain(window) {
-  const initializer = new Initializer(window);
+  const initializer = new OldInitializer(window);
   initializer.init();
+
+  const setup = new Initializer(window);
+  setup.init();
 }
 
 // Quit when all windows are closed.
