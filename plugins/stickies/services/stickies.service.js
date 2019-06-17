@@ -9,6 +9,7 @@ export class StickiesService {
 
   /** todoClient is optional. It is required to initialize the service */
   static getInstance(todoClient) {
+    console.log('TODO CLIENT IN GLOBAL: ', global.todoClient);
     console.log('[INSTNACE]: ', StickiesService._INSTANCE);
     if (!todoClient && !StickiesService._INSTANCE) {
       throw new Error(

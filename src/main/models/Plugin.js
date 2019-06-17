@@ -4,7 +4,7 @@ import { appState } from '../state';
 export class TodoPlugin {
   constructor(pluginConfig) {
     this.name = pluginConfig.name;
-    this.index = pluginConfig.index;
+    this.index = join(pluginConfig.root, pluginConfig.index);
     this.component = pluginConfig.component;
 
     this.root = pluginConfig.root || '';
@@ -49,9 +49,11 @@ export class TodoPlugin {
     // TODO: Add error handling
     // ('PATH: ------------------ ', join(this.root, this.index));
 
-    const installer = eval('require')(
-      /* webpackIgnore: true */ join(this.root, this.index)
-    ).default;
+    let installer = eval('require')(/* webpackIgnore: true */ this.index);
+
+    if (!(installer instanceof Function)) {
+      installer = installer.default;
+    }
 
     return installer(appState.client).then(updateApi.bind(this));
   }

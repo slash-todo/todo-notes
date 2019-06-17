@@ -1,6 +1,5 @@
 import Vue from 'vue';
 import Router from 'vue-router';
-import { remote } from 'electron';
 
 import { SettingsContainer } from './renderer/components';
 import Landing from './renderer/Landing.vue';
@@ -10,33 +9,9 @@ import { RendererInitializer } from './renderer/initializer';
 Vue.use(Router);
 
 const initializer = new RendererInitializer();
-initializer.init();
-
-function externalComponent(url) {
-  return new Promise((resolve, reject) => {
-    const name = url
-      .split('/')
-      .reverse()[0]
-      .match(/^(.*?)\.umd/)[1];
-    const script = document.createElement('script');
-    script.async = true;
-    script.addEventListener('load', () => {
-      resolve(window[name]);
-    });
-    script.addEventListener('error', () => {
-      reject(new Error(`Error loading ${url}`));
-    });
-    script.src = url;
-    document.head.appendChild(script);
-  });
-}
-
-let pluginRoutes = remote.getGlobal('routes');
-pluginRoutes = pluginRoutes.map(r => ({
-  ...r,
-  component: () =>
-    Promise.resolve(eval('require')(r.component.path)[r.component.name])
-}));
+initializer.init().then(routes => {
+  router.addRoutes(routes);
+});
 
 const router = new Router({
   routes: [
@@ -47,8 +22,7 @@ const router = new Router({
     {
       path: '/settings',
       component: SettingsContainer
-    },
-    ...pluginRoutes
+    }
   ]
 });
 

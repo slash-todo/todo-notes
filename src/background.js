@@ -45,11 +45,16 @@ function createWindow() {
 }
 
 function initializeMain(window) {
-  const initializer = new OldInitializer(window);
-  initializer.init();
+  //const initializer = new OldInitializer(window);
+  //initializer.init();
 
   const setup = new Initializer(window);
-  setup.init();
+  setup
+    .init()
+    .then(() => console.log('[Main] Initialized successfully!'))
+    .catch(error =>
+      console.error(`[Main] Error initializing main thread. - ${error}`)
+    );
 }
 
 // Quit when all windows are closed.

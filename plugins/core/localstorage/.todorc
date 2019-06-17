@@ -1,4 +1,4 @@
 {
   "name": "localstorage",
-  "install": "./index.js"
+  "index": "./index.js"
 }

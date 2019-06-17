@@ -7,5 +7,8 @@
     "build": "vue build --target lib --name stickies index.js"
   },
   "author": "KenavR",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@vue/cli": "^3.8.2"
+  }
 }

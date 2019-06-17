@@ -1,6 +1,6 @@
 import { appState, TodoConfig } from './state';
 import { PluginService } from './services';
-import { ConfigUtils, map, parallel, flatMap, tap } from './utils';
+import { ConfigUtils, map, parallel, flatMap, tap, pipe } from './utils';
 import { lstatSync, readdirSync } from 'fs';
 import { join, resolve } from 'path';
 import { DEFAULT_CONFIG_FILENAME } from './state/constants';
@@ -70,8 +70,23 @@ export class Initializer {
     }
 
     const corePluginsPath = resolve(join(config.plugins.path, 'core'));
+
+    /*Promise.resolve(corePluginsPath)
+      .then(
+        pipe(
+          map(getPluginDirectoryList),
+          map(toConfigPath),
+          flatMap(ConfigUtils.loadConfig),
+          map(toPlugin)
+        )
+      )
+      .then(res => console.log('PIPE TEST: ', res))
+      .catch(error => {
+        console.error('Error in PIPE TEST: ', error);
+      });*/
+
     return Promise.resolve(corePluginsPath)
-      .then(flatMap(getPluginDirectoryList))
+      .then(map(getPluginDirectoryList))
       .then(map(toConfigPath))
       .then(flatMap(ConfigUtils.loadConfig))
       .then(map(toPlugin));
@@ -90,7 +105,7 @@ export class Initializer {
 
     return Promise.resolve(config.plugins.installed)
       .then(map(downloadPlugins.bind(this)))
-      .then(map(ConfigUtils.loadConfig))
+      .then(flatMap(ConfigUtils.loadConfig))
       .then(map(toPlugin));
   }
 
@@ -102,14 +117,8 @@ export class Initializer {
       };
     }
 
-    this[loadAndInitConfig]()
+    return this[loadAndInitConfig]()
       .then(parallel(this[initCorePlugins], this[initUserPlugins]))
-      .then(tap(updateGlobal))
-      .then(res => {
-        console.log('THIS IS THE SETUP RESULT: ', res);
-      })
-      .catch(error => {
-        console.error('Error in SETUP: ', error);
-      });
+      .then(tap(updateGlobal));
   }
 }
